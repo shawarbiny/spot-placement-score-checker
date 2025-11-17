@@ -1,0 +1,158 @@
+@model SpotPlacementScoreWebsite.Models.HomeViewModel
+@{
+    ViewData["Title"] = "Spot Placement Score Results";
+}
+
+<div class="container mt-4">
+    <h1 class="mb-4">Spot Placement Score Results</h1>
+
+    <div class="mb-3">
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Check New Scores
+        </a>
+        <button class="btn btn-info ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#rawApiData">
+            <i class="bi bi-code-square"></i> Show API Details
+        </button>
+    </div>
+
+    <div class="collapse mb-4" id="rawApiData">
+        <div class="card">
+            <div class="card-header">
+                <strong>API Request</strong>
+            </div>
+            <div class="card-body">
+                <pre class="bg-light p-3" style="max-height: 400px; overflow-y: auto;"><code>@Model?.RawApiRequest</code></pre>
+            </div>
+        </div>
+        <div class="card mt-3">
+            <div class="card-header">
+                <strong>API Response</strong>
+            </div>
+            <div class="card-body">
+                <pre class="bg-light p-3" style="max-height: 400px; overflow-y: auto;"><code>@Model?.RawApiResponse</code></pre>
+            </div>
+        </div>
+    </div>
+
+    @if (Model?.Results == null || !Model.Results.Any())
+    {
+        <div class="alert alert-warning" role="alert">
+            No results available.
+        </div>
+    }
+    else
+    {
+        var groupedResults = Model.Results
+            .GroupBy(r => new { r.Region, r.VmSku })
+            .OrderBy(g => g.Key.Region)
+            .ThenBy(g => g.Key.VmSku);
+
+        var useAvailabilityZones = Model.Request?.UseAvailabilityZones ?? true;
+
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Region</th>
+                        <th>VM SKU</th>
+                        @if (useAvailabilityZones)
+                        {
+                            <th>Zone 1</th>
+                            <th>Zone 2</th>
+                            <th>Zone 3</th>
+                        }
+                        else
+                        {
+                            <th>Score</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var group in groupedResults)
+                    {
+                        var zone1 = group.FirstOrDefault(r => r.AvailabilityZone == "1");
+                        var zone2 = group.FirstOrDefault(r => r.AvailabilityZone == "2");
+                        var zone3 = group.FirstOrDefault(r => r.AvailabilityZone == "3");
+                        var noZone = group.FirstOrDefault(r => r.AvailabilityZone == "N/A");
+
+                        <tr>
+                            <td>@group.Key.Region</td>
+                            <td><code>@group.Key.VmSku</code></td>
+                            @if (useAvailabilityZones)
+                            {
+                                <td>
+                                    @if (zone1 != null)
+                                    {
+                                        <span class="badge @GetScoreBadgeClass(zone1.Score)">@zone1.Score</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">N/A</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (zone2 != null)
+                                    {
+                                        <span class="badge @GetScoreBadgeClass(zone2.Score)">@zone2.Score</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">N/A</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (zone3 != null)
+                                    {
+                                        <span class="badge @GetScoreBadgeClass(zone3.Score)">@zone3.Score</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">N/A</span>
+                                    }
+                                </td>
+                            }
+                            else
+                            {
+                                <td>
+                                    @if (noZone != null)
+                                    {
+                                        <span class="badge @GetScoreBadgeClass(noZone.Score)">@noZone.Score</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">N/A</span>
+                                    }
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="alert alert-info mt-4" role="alert">
+            <p class="mb-1">
+                <strong>High:</strong> The deployment is highly likely to succeed.
+            </p>
+            <p class="mb-1">
+                <strong>Medium:</strong> The deployment has a moderate chance of success.
+            </p>
+            <p class="mb-0">
+                <strong>Low:</strong> The deployment has a low chance of success.
+            </p>
+        </div>
+    }
+</div>
+
+@functions {
+    private string GetScoreBadgeClass(string score)
+    {
+        return score?.ToLower() switch
+        {
+            "high" => "bg-success",
+            "medium" => "bg-warning text-dark",
+            "low" => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+}

@@ -1,0 +1,112 @@
+@using SpotPlacementScoreWebsite.Models
+@model HomeViewModel
+@{
+    ViewData["Title"] = "Spot Placement Score Checker";
+}
+
+<div class="container mt-4">
+    <h1 class="mb-4">Azure Spot VM Placement Score Checker</h1>
+    
+    <div class="alert alert-info" role="alert">
+        <strong>Instructions:</strong> Select a subscription, then choose up to 5 VM SKUs and 3 regions to check spot placement scores.
+    </div>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger" role="alert">
+            <ul class="mb-0">
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <form asp-action="CheckSpotPlacement" method="post" id="spotPlacementForm">
+        @Html.AntiForgeryToken()
+        
+        <!-- Subscription Dropdown -->
+        <div class="mb-4">
+            <label for="subscriptionSelect" class="form-label">Select Subscription</label>
+            <select class="form-select" id="subscriptionSelect" name="SubscriptionId" required>
+                <option value="">-- Select a subscription --</option>
+                @foreach (var sub in Model.Subscriptions)
+                {
+                    <option value="@sub.SubscriptionId">@sub.DisplayName</option>
+                }
+            </select>
+        </div>
+
+        <!-- Instance Series Dropdown -->
+        <div id="seriesSection" class="mb-4" style="display: none;">
+            <label for="seriesSelect" class="form-label">Select Instance Series</label>
+            <select class="form-select" id="seriesSelect">
+                <option value="">-- Select an instance series --</option>
+            </select>
+        </div>
+
+        <div id="loadingSpinner" class="text-center mb-4" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p id="loadingText">Loading...</p>
+        </div>
+
+        <!-- VM SKUs Section -->
+        <div id="skusSection" style="display: none;">
+            <div class="mb-4">
+                <label class="form-label">Select VM SKUs (Max 5)</label>
+                <div class="text-muted mb-2">Selected: <span id="skuCount">0</span>/5</div>
+                <div id="skusList" class="row">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Availability Zones and Desired Count Section -->
+        <div id="zonesSection" style="display: none;">
+            <div class="mb-4">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-check">
+                            <input type="hidden" id="useAvailabilityZonesHidden" name="UseAvailabilityZones" value="true">
+                            <input class="form-check-input" type="checkbox" id="useAvailabilityZones" checked>
+                            <label class="form-check-label" for="useAvailabilityZones">
+                                <strong>Use Availability Zones</strong>
+                                <small class="text-muted d-block">Check scores across different availability zones within each region</small>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="desiredCount" class="form-label"><strong>Desired Count</strong></label>
+                        <input type="number" class="form-control" id="desiredCount" name="DesiredCount" min="1" max="100" value="1">
+                        <small class="text-muted">Number of VM instances desired (1-100)</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Regions Section -->
+        <div id="regionsSection" style="display: none;">
+            <div class="mb-4">
+                <label class="form-label">Select Regions (Max 3)</label>
+                <div class="text-muted mb-2">Selected: <span id="regionCount">0</span>/3</div>
+                <div id="regionsList" class="row">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="mb-4" id="submitSection" style="display: none;">
+            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                Check Spot Placement Scores
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script src="~/js/spotplacement.js"></script>
+}
