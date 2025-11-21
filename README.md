@@ -65,7 +65,6 @@ Ensure the signed-in user has at least **Reader** role on the Azure subscription
 ### 4. Run the Application
 
 ```powershell
-cd "c:\Users\fashawar\OneDrive - Microsoft\Morgan Stanley\Spot Placment Score Website"
 dotnet restore
 dotnet build
 dotnet run
