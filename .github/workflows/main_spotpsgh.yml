@@ -25,6 +25,7 @@ jobs:
 
       - name: Build with dotnet
         run: dotnet build "SpotPlacementScoreWebsite.csproj" --configuration Release
+        working-directory: SpotPlacementScoreWebsite
 
       - name: dotnet publish
         run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"
@@ -64,5 +65,6 @@ jobs:
           package: .
 
           
+
 
 
